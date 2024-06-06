@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
 
+	"github.com/Azure/draft/pkg/osutil"
 	"github.com/Azure/draft/pkg/prompts"
 	"github.com/Azure/draft/pkg/templatewriter"
 	"github.com/Azure/draft/pkg/templatewriter/writers"
@@ -55,7 +57,7 @@ with draft on AKS. This command assumes the 'setup-gh' command has been run prop
 	f.StringVarP(&gwCmd.workflowConfig.AksClusterName, "cluster-name", "c", emptyDefaultFlagValue, "specify the AKS cluster name")
 	f.StringVarP(&gwCmd.workflowConfig.AcrName, "registry-name", "r", emptyDefaultFlagValue, "specify the Azure container registry name")
 	f.StringVar(&gwCmd.workflowConfig.ContainerName, "container-name", emptyDefaultFlagValue, "specify the container image name")
-	f.StringVarP(&gwCmd.workflowConfig.ResourceGroupName, "resource-group", "g", emptyDefaultFlagValue, "specify the Azure resource group of your AKS cluster")
+	f.StringVarP(&gwCmd.workflowConfig.AcrResourceGroupName, "resource-group", "g", emptyDefaultFlagValue, "specify the Azure resource group of your AKS cluster")
 	f.StringVarP(&gwCmd.dest, "destination", "d", currentDirDefaultFlagValue, "specify the path to the project directory")
 	f.StringVarP(&gwCmd.workflowConfig.BranchName, "branch", "b", emptyDefaultFlagValue, "specify the Github branch to automatically deploy from")
 	f.StringVar(&gwCmd.deployType, "deploy-type", emptyDefaultFlagValue, "specify the type of deployment")
@@ -109,4 +111,35 @@ func (gwc *generateWorkflowCmd) generateWorkflows(dest string, deployType string
 	maps.Copy(customInputs, flagValuesMap)
 
 	return workflow.CreateWorkflowFiles(deployType, customInputs, templateWriter)
+}
+
+func generateDevHubWorkflow(deployType string, workflow *workflows.WorkflowConfig) ([]byte, error) {
+	envArgs := workflow.SetFlagValuesToMap()
+
+	switch deployType {
+	case "helm":
+		dhWorkflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, "workflow/helm/.github/workflows/azure-kubernetes-service-helm.yml", envArgs)
+		if err != nil {
+			return nil, fmt.Errorf("replace template variables: %w", err)
+		}
+
+		if err = osutil.CheckAllVariablesSubstituted(string(dhWorkflowBytes)); err != nil {
+			return nil, fmt.Errorf("check all variables substituted: %w", err)
+		}
+
+		return dhWorkflowBytes, nil
+	case "manifests":
+		dhWorkflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, "workflow/manifests/.github/workflows/azure-kubernetes-service.yml", envArgs)
+		if err != nil {
+			return nil, fmt.Errorf("replace template variables: %w", err)
+		}
+
+		if err = osutil.CheckAllVariablesSubstituted(string(dhWorkflowBytes)); err != nil {
+			return nil, fmt.Errorf("check all variables substituted: %w", err)
+		}
+
+		return dhWorkflowBytes, nil
+	}
+
+	return nil, errors.New("unsupported deployment type")
 }

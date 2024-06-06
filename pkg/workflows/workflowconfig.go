@@ -1,12 +1,15 @@
 package workflows
 
 type WorkflowConfig struct {
-	AcrName           string
-	ContainerName     string
-	ResourceGroupName string
-	AksClusterName    string
-	BranchName        string
-	BuildContextPath  string
+	AcrName                  string
+	AcrResourceGroupName     string
+	AksClusterName           string
+	BranchName               string
+	BuildContextPath         string
+	ChartPath                string
+	ChartOverridePath        string
+	ClusterResourceGroupName string
+	ContainerName            string
 }
 
 func (config *WorkflowConfig) SetFlagValuesToMap() map[string]string {
@@ -15,12 +18,8 @@ func (config *WorkflowConfig) SetFlagValuesToMap() map[string]string {
 		flagValuesMap["AZURECONTAINERREGISTRY"] = config.AcrName
 	}
 
-	if config.ContainerName != "" {
-		flagValuesMap["CONTAINERNAME"] = config.ContainerName
-	}
-
-	if config.ResourceGroupName != "" {
-		flagValuesMap["RESOURCEGROUP"] = config.ResourceGroupName
+	if config.AcrResourceGroupName != "" {
+		flagValuesMap["RESOURCEGROUP"] = config.AcrResourceGroupName
 	}
 
 	if config.AksClusterName != "" {
@@ -33,6 +32,22 @@ func (config *WorkflowConfig) SetFlagValuesToMap() map[string]string {
 
 	if config.BuildContextPath != "" {
 		flagValuesMap["BUILDCONTEXTPATH"] = config.BuildContextPath
+	}
+
+	if config.ChartPath != "" {
+		flagValuesMap["CHARTPATH"] = config.ChartPath
+	}
+
+	if config.ChartOverridePath != "" {
+		flagValuesMap["CHARTOVERRIDEPATH"] = config.ChartOverridePath
+	}
+
+	if config.ClusterResourceGroupName != "" {
+		flagValuesMap["CLUSTERRESOURCEGROUP"] = config.ClusterResourceGroupName
+	}
+
+	if config.ContainerName != "" {
+		flagValuesMap["CONTAINERNAME"] = config.ContainerName
 	}
 
 	return flagValuesMap
