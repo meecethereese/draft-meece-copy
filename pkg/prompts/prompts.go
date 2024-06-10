@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Azure/draft/pkg/config"
+	"github.com/Azure/draft/pkg/workflows"
 )
 
 func RunPromptsFromConfig(config *config.DraftConfig) (map[string]string, error) {
@@ -243,4 +244,161 @@ func Select[T any](label string, items []T, opt *SelectOpt[T]) (T, error) {
 	}
 
 	return items[i], nil
+}
+
+// RunPromptsForDeployTypeWithSkipsIO runs the prompts according to the given deployType.
+func RunPromptsForDeployTypeWithSkipsIO(workflowEnv workflows.WorkflowEnv, deployType string, varsToSkip []string, Stdin io.ReadCloser, Stdout io.WriteCloser) (map[string]string, error) {
+	skipMap := make(map[string]interface{})
+	for _, v := range varsToSkip {
+		skipMap[v] = interface{}(nil)
+	}
+
+	inputs := make(map[string]string)
+
+	skipOrPrompt := func(envVar workflows.EnvVar) error {
+		if _, ok := skipMap[envVar.Name]; ok {
+			log.Debugf("Skipping prompt for %s", envVar.Name)
+			return nil
+		}
+
+		if envVar.DisablePrompt {
+			log.Debugf("Skipping prompt for %s as it has DisablePrompt=true", envVar.Name)
+			noPromptDefaultValue := envVar.Value
+			if noPromptDefaultValue == "" {
+				return fmt.Errorf("IsPromptDisabled is true for %s but no default value was found", envVar.Name)
+			}
+			log.Debugf("Using default value %s for %s", noPromptDefaultValue, envVar.Name)
+			inputs[envVar.Name] = noPromptDefaultValue
+			return nil
+		}
+
+		log.Debugf("constructing prompt for: %s", envVar.Name)
+		if envVar.Type == "bool" {
+			input, err := runBoolPromptForEnvVar(envVar, Stdin, Stdout)
+			if err != nil {
+				return err
+			}
+			inputs[envVar.Name] = input
+		} else {
+			defaultValue := envVar.Value
+
+			stringInput, err := runDefaultableStringPromptForEnvVar(envVar, defaultValue, nil, Stdin, Stdout)
+			if err != nil {
+				return err
+			}
+			inputs[envVar.Name] = stringInput
+		}
+
+		return nil
+	}
+
+	err := skipOrPrompt(workflowEnv.AcrResourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.AcrResourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.BranchName)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.BuildContextPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.ClusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.ClusterResourceGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	err = skipOrPrompt(workflowEnv.ContainerName)
+	if err != nil {
+		return nil, err
+	}
+
+	switch deployType {
+	case "helm":
+		err = skipOrPrompt(workflowEnv.HelmEnvStruct.ChartPath)
+		if err != nil {
+			return nil, err
+		}
+
+		err = skipOrPrompt(workflowEnv.HelmEnvStruct.ChartOverridePath)
+		if err != nil {
+			return nil, err
+		}
+
+		err = skipOrPrompt(workflowEnv.HelmEnvStruct.ChartOverrides)
+		if err != nil {
+			return nil, err
+		}
+	case "kustomize":
+		err = skipOrPrompt(workflowEnv.KustomizeEnvStruct.KustomizePath)
+		if err != nil {
+			return nil, err
+		}
+	case "manifests":
+		err = skipOrPrompt(workflowEnv.ManifestEnvStruct.DeploymentManifestPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return inputs, nil
+}
+
+func runBoolPromptForEnvVar(envVar workflows.EnvVar, Stdin io.ReadCloser, Stdout io.WriteCloser) (string, error) {
+	newSelect := &promptui.Select{
+		Label:  "Please select " + envVar.Description,
+		Items:  []bool{true, false},
+		Stdin:  Stdin,
+		Stdout: Stdout,
+	}
+
+	_, input, err := newSelect.Run()
+	if err != nil {
+		return "", err
+	}
+	return input, nil
+}
+
+func runDefaultableStringPromptForEnvVar(envVar workflows.EnvVar, defaultValue string, validate func(string) error, Stdin io.ReadCloser, Stdout io.WriteCloser) (string, error) {
+	var validatorFunc func(string) error
+	if validate == nil {
+		validatorFunc = NoBlankStringValidator
+	}
+
+	defaultString := ""
+	if defaultValue != "" {
+		validatorFunc = AllowAllStringValidator
+		defaultString = " (default: " + defaultValue + ")"
+	}
+
+	prompt := &promptui.Prompt{
+		Label:    "Please enter " + envVar.Description + defaultString,
+		Validate: validatorFunc,
+		Stdin:    Stdin,
+		Stdout:   Stdout,
+	}
+
+	input, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
+	// Variable-level substitution, we need to get defaults so later references can be resolved in this loop
+	if input == "" && defaultString != "" {
+		input = defaultValue
+	}
+	return input, nil
 }
