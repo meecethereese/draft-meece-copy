@@ -21,7 +21,6 @@ import (
 
 type generateWorkflowCmd struct {
 	workflowEnv    workflows.WorkflowEnv
-	workflowConfig workflows.WorkflowConfig
 	dest           string
 	deployType     string
 	flagVariables  []string
@@ -158,42 +157,25 @@ func writeFile(deployType string, dest string, workflowBytes []byte, templateWri
 }
 
 func GenerateWorkflowBytes(deployType string, envArgsMap map[string]string) ([]byte, error) {
+	var templatePath string
+
 	switch deployType {
 	case "helm":
-		workflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, "workflow/helm/.github/workflows/azure-kubernetes-service-helm.yml", envArgsMap)
-		if err != nil {
-			return nil, fmt.Errorf("replace template variables: %w", err)
-		}
-
-		if err = osutil.CheckAllVariablesSubstituted(string(workflowBytes)); err != nil {
-			return nil, fmt.Errorf("check all variables substituted: %w", err)
-		}
-
-		return workflowBytes, nil
-
+		templatePath = "workflow/helm/.github/workflows/azure-kubernetes-service-helm.yml"
 	case "kustomize":
-		workflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, "workflow/kustomize/.github/workflows/azure-kubernetes-service-kustomize.yml", envArgsMap)
-		if err != nil {
-			return nil, fmt.Errorf("replace template variables: %w", err)
-		}
-
-		if err = osutil.CheckAllVariablesSubstituted(string(workflowBytes)); err != nil {
-			return nil, fmt.Errorf("check all variables substituted: %w", err)
-		}
-
-		return workflowBytes, nil
+		templatePath = "workflow/kustomize/.github/workflows/azure-kubernetes-service-kustomize.yml"
 	case "manifests":
-		workflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, "workflow/manifests/.github/workflows/azure-kubernetes-service.yml", envArgsMap)
-		if err != nil {
-			return nil, fmt.Errorf("replace template variables: %w", err)
-		}
-
-		if err = osutil.CheckAllVariablesSubstituted(string(workflowBytes)); err != nil {
-			return nil, fmt.Errorf("check all variables substituted: %w", err)
-		}
-
-		return workflowBytes, nil
+		templatePath = "workflow/manifests/.github/workflows/azure-kubernetes-service.yml"
 	}
 
-	return nil, errors.New("unsupported deployment type")
+	workflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, templatePath, envArgsMap)
+	if err != nil {
+		return nil, fmt.Errorf("replace template variables: %w", err)
+	}
+
+	if err = osutil.CheckAllVariablesSubstituted(string(workflowBytes)); err != nil {
+		return nil, fmt.Errorf("check all variables substituted: %w", err)
+	}
+
+	return workflowBytes, nil
 }
