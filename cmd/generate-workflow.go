@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -63,9 +64,14 @@ with draft on AKS. This command assumes the 'setup-gh' command has been run prop
 				return fmt.Errorf("generate workflow bytes: %w", err)
 			}
 
-			// if err := gwCmd.generateWorkflows(gwCmd.dest, gwCmd.deployType, gwCmd.templateWriter, flagValuesMap); err != nil {
-			// 	return err
-			// }
+			destPath := path.Join(gwCmd.dest, ".github/workflows/azure-kubernetes-service.yml")
+			if err = gwCmd.templateWriter.EnsureDirectory(destPath); err != nil {
+				return err
+			}
+
+			if err = gwCmd.templateWriter.WriteFile(destPath, workflowBytes); err != nil {
+				return err
+			}
 
 			log.Info("Draft has successfully generated a Github workflow for your project 😃")
 
@@ -75,6 +81,7 @@ with draft on AKS. This command assumes the 'setup-gh' command has been run prop
 
 	f := cmd.Flags()
 	f.StringVarP(&gwCmd.workflowEnv.ClusterName.Value, "cluster-name", "c", emptyDefaultFlagValue, "specify the AKS cluster name")
+	f.StringVarP(&gwCmd.workflowEnv.PrivateCluster.Value, "private-cluster", "p", emptyDefaultFlagValue, "specify if the AKS cluster is private")
 	f.StringVarP(&gwCmd.workflowEnv.AzureContainerRegistry.Value, "registry-name", "r", emptyDefaultFlagValue, "specify the Azure container registry name")
 	f.StringVar(&gwCmd.workflowEnv.ContainerName.Value, "container-name", emptyDefaultFlagValue, "specify the container image name")
 	f.StringVarP(&gwCmd.workflowEnv.AcrResourceGroup.Value, "resource-group", "g", emptyDefaultFlagValue, "specify the Azure resource group of your ACR")
@@ -131,10 +138,6 @@ func promptDeployType(deployType string) (string, error) {
 
 	return deployType, nil
 }
-
-// func (gwc *generateWorkflowCmd) generateWorkflows(dest string, deployType string, templateWriter templatewriter.TemplateWriter) error {
-// 	return workflows.CreateWorkflowsFromEmbedFS(template.Workflows, dest).CreateWorkflowFiles(deployType, customInputs, templateWriter)
-// }
 
 func GenerateWorkflowBytes(deployType string, envArgsMap map[string]string) ([]byte, error) {
 	switch deployType {

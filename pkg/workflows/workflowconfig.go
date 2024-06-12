@@ -69,6 +69,7 @@ type WorkflowEnv struct {
 	ClusterName            EnvVar
 	ClusterResourceGroup   EnvVar
 	ContainerName          EnvVar
+	PrivateCluster         EnvVar
 
 	HelmEnvStruct      HelmEnv
 	KustomizeEnvStruct KustomizeEnv
@@ -91,67 +92,75 @@ type KustomizeEnv struct {
 
 func (we *WorkflowEnv) FillWorkflowEnv() {
 	we.AcrResourceGroup.Name = "ACR_RESOURCE_GROUP"
-	we.AcrResourceGroup.Description = "The Azure Resource Group of the Azure Container Registry"
+	we.AcrResourceGroup.Description = "the Azure Resource Group of the Azure Container Registry"
 	we.AcrResourceGroup.DisablePrompt = false
 
 	we.AzureContainerRegistry.Name = "ACR_NAME"
-	we.AzureContainerRegistry.Description = "The name of the Azure Container Registry"
+	we.AzureContainerRegistry.Description = "the name of the Azure Container Registry"
 	we.AzureContainerRegistry.DisablePrompt = false
 
 	we.BranchName.Name = "BRANCH_NAME"
-	we.BranchName.Description = "The name of the branch to deploy from"
+	we.BranchName.Description = "the name of the branch to deploy from"
 	we.BranchName.DisablePrompt = false
 
 	we.BuildContextPath.Name = "BUILD_CONTEXT_PATH"
-	we.BuildContextPath.Description = "The path to the Docker build context"
+	we.BuildContextPath.Description = "the path to the Docker build context"
+	we.BuildContextPath.DisablePrompt = false
 	if we.BuildContextPath.Value == "" {
 		we.BuildContextPath.Value = "."
 	}
-	we.BuildContextPath.DisablePrompt = false
 
 	we.ClusterName.Name = "CLUSTER_NAME"
-	we.ClusterName.Description = "The name of the AKS cluster"
+	we.ClusterName.Description = "the name of the AKS cluster"
 	we.ClusterName.DisablePrompt = false
 
 	we.ClusterResourceGroup.Name = "CLUSTER_RESOURCE_GROUP"
-	we.ClusterResourceGroup.Description = "The Azure Resource Group of the AKS cluster"
+	we.ClusterResourceGroup.Description = "the Azure Resource Group of the AKS cluster"
 	we.ClusterResourceGroup.DisablePrompt = false
 
 	we.ContainerName.Name = "CONTAINER_NAME"
-	we.ContainerName.Description = "The name of the container image"
+	we.ContainerName.Description = "the name of the container image"
 	we.ContainerName.DisablePrompt = false
 
+	we.PrivateCluster.Name = "PRIVATE_CLUSTER"
+	we.PrivateCluster.Description = "whether the AKS cluster is private or not"
+	we.PrivateCluster.DisablePrompt = false
+	we.PrivateCluster.Type = "bool"
+
 	we.HelmEnvStruct.ChartPath.Name = "CHART_PATH"
-	we.HelmEnvStruct.ChartPath.Description = "The path to the Helm chart"
+	we.HelmEnvStruct.ChartPath.Description = "the path to the Helm chart"
+	we.HelmEnvStruct.ChartPath.DisablePrompt = true
 	if we.HelmEnvStruct.ChartPath.Value == "" {
 		we.HelmEnvStruct.ChartPath.Value = "./charts"
 	}
-	we.HelmEnvStruct.ChartPath.DisablePrompt = true
 
 	we.HelmEnvStruct.ChartOverridePath.Name = "CHART_OVERRIDE_PATH"
-	we.HelmEnvStruct.ChartOverridePath.Description = "The path to the Helm chart overrides"
+	we.HelmEnvStruct.ChartOverridePath.Description = "the path to the Helm chart overrides"
+	we.HelmEnvStruct.ChartOverridePath.DisablePrompt = true
 	if we.HelmEnvStruct.ChartOverridePath.Value == "" {
 		we.HelmEnvStruct.ChartOverridePath.Value = "./charts/production.yaml"
 	}
-	we.HelmEnvStruct.ChartOverridePath.DisablePrompt = true
 
 	we.HelmEnvStruct.ChartOverrides.Name = "CHART_OVERRIDES"
-	we.HelmEnvStruct.ChartOverrides.Description = "The Helm chart overrides"
+	we.HelmEnvStruct.ChartOverrides.Description = "the Helm chart overrides"
 	we.HelmEnvStruct.ChartOverrides.DisablePrompt = true
+	if we.HelmEnvStruct.ChartOverrides.Value == "" {
+		we.HelmEnvStruct.ChartOverrides.Value = "replicas:2"
+	}
 
 	we.KustomizeEnvStruct.KustomizePath.Name = "KUSTOMIZE_PATH"
-	we.KustomizeEnvStruct.KustomizePath.Description = "The path to the Kustomize directory"
+	we.KustomizeEnvStruct.KustomizePath.Description = "the path to the Kustomize directory"
+	we.KustomizeEnvStruct.KustomizePath.DisablePrompt = true
 	if we.KustomizeEnvStruct.KustomizePath.Value == "" {
 		we.KustomizeEnvStruct.KustomizePath.Value = "./overlays/production"
 	}
-	we.KustomizeEnvStruct.KustomizePath.DisablePrompt = true
 
 	we.ManifestEnvStruct.DeploymentManifestPath.Name = "DEPLOYMENT_MANIFEST_PATH"
-	we.ManifestEnvStruct.DeploymentManifestPath.Description = "The path to the deployment manifest"
+	we.ManifestEnvStruct.DeploymentManifestPath.Description = "the path to the deployment manifest"
+	we.ManifestEnvStruct.DeploymentManifestPath.DisablePrompt = true
 	if we.ManifestEnvStruct.DeploymentManifestPath.Value == "" {
 		we.ManifestEnvStruct.DeploymentManifestPath.Value = "./manifests"
 	}
-	we.ManifestEnvStruct.DeploymentManifestPath.DisablePrompt = true
 }
 
 func (we *WorkflowEnv) BuildMap() map[string]string {
