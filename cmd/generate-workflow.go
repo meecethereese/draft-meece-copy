@@ -64,14 +64,7 @@ with draft on AKS. This command assumes the 'setup-gh' command has been run prop
 				return fmt.Errorf("generate workflow bytes: %w", err)
 			}
 
-			destPath := path.Join(gwCmd.dest, ".github/workflows/azure-kubernetes-service.yml")
-			if err = gwCmd.templateWriter.EnsureDirectory(destPath); err != nil {
-				return err
-			}
-
-			if err = gwCmd.templateWriter.WriteFile(destPath, workflowBytes); err != nil {
-				return err
-			}
+			writeFile(gwCmd.deployType, gwCmd.dest, workflowBytes, gwCmd.templateWriter)
 
 			log.Info("Draft has successfully generated a Github workflow for your project 😃")
 
@@ -137,6 +130,31 @@ func promptDeployType(deployType string) (string, error) {
 	}
 
 	return deployType, nil
+}
+
+func writeFile(deployType string, dest string, workflowBytes []byte, templateWriter templatewriter.TemplateWriter) error {
+	var destPath string
+
+	switch deployType {
+	case "helm":
+		destPath = path.Join(dest, ".github/workflows/azure-kubernetes-service-helm.yml")
+	case "kustomize":
+		destPath = path.Join(dest, ".github/workflows/azure-kubernetes-service-kustomize.yml")
+	case "manifests":
+		destPath = path.Join(dest, ".github/workflows/azure-kubernetes-service.yml")
+	default:
+		return errors.New("unsupported deployment type")
+	}
+
+	if err := templateWriter.EnsureDirectory(destPath); err != nil {
+		return fmt.Errorf("ensure directory: %w", err)
+	}
+
+	if err := templateWriter.WriteFile(destPath, workflowBytes); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+
+	return nil
 }
 
 func GenerateWorkflowBytes(deployType string, envArgsMap map[string]string) ([]byte, error) {
