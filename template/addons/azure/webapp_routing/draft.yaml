@@ -1,17 +1,15 @@
 variables:
-  - name: "ingress-tls-cert-keyvault-uri"
+  GENERATORLABEL:
+    description: "the label to identify who generated the resource"
+    disablePrompt: true
+    value: "draft"
+  ingress-host:
+    description: "specify the host of the ingress resource"
+  ingress-tls-cert-keyvault-uri:
     description: "the keyvault uri for the tls certificate"
-  - name: "ingress-use-osm-mtls"
+  ingress-use-osm-mtls:
     description: "use open service mesh mutual-tls"
     type: "bool"
-  - name: "ingress-host"
-    description: "specify the host of the ingress resource"
-  - name: "GENERATORLABEL"
-    description: "the label to identify who generated the resource"
-variableDefaults:
-  - name: "GENERATORLABEL"
-    value: "draft"
-    disablePrompt: true
 references:
   service:
     - name: "service-name"

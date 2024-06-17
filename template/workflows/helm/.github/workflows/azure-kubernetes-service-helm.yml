@@ -32,7 +32,7 @@
 # For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
 # For more options with the actions used below please refer to https://github.com/Azure/login
 
-name: Build and deploy an app to AKS with Helm
+name: {{WORKFLOWNAME}}
 
 on:
   push:
@@ -46,7 +46,11 @@ env:
   CLUSTER_NAME: {{CLUSTERNAME}}
   CHART_PATH: {{CHARTPATH}}
   CHART_OVERRIDE_PATH: {{CHARTOVERRIDEPATH}}
+  CHART_OVERRIDES: {{CHARTOVERRIDES}}
   BUILD_CONTEXT_PATH: {{BUILDCONTEXTPATH}}
+  PRIVATE_CLUSTER: {{PRIVATECLUSTER}}
+  NAMESPACE: {{NAMESPACE}}
+  DOCKER_FILE: {{DOCKERFILE}}
 
 jobs:
   buildImage:
@@ -69,7 +73,7 @@ jobs:
       # Builds and pushes an image up to your Azure Container Registry
       - name: Build and push image to ACR
         run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} .
+          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} ${{ env.DOCKER_FILE }} ${{ env.BUILD_CONTEXT_PATH }}
   deploy:
     permissions:
       actions: read
@@ -111,8 +115,7 @@ jobs:
           renderEngine: "helm"
           helmChart: ${{ env.CHART_PATH }}
           overrideFiles: ${{ env.CHART_OVERRIDE_PATH }}
-          overrides: |
-            replicas:2
+          overrides: ${{ env.CHART_OVERRIDES }}
           helm-version: "latest"
         id: bake
 
@@ -124,3 +127,5 @@ jobs:
           manifests: ${{ steps.bake.outputs.manifestsBundle }}
           images: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+          private-cluster: ${{ env.PRIVATE_CLUSTER }}
+          namespace: ${{ env.NAMESPACE }}

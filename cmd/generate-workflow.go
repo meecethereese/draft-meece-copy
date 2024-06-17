@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/maps"
 
+	"github.com/Azure/draft/pkg/config"
+	"github.com/Azure/draft/pkg/osutil"
 	"github.com/Azure/draft/pkg/prompts"
 	"github.com/Azure/draft/pkg/templatewriter"
 	"github.com/Azure/draft/pkg/templatewriter/writers"
@@ -109,4 +112,29 @@ func (gwc *generateWorkflowCmd) generateWorkflows(dest string, deployType string
 	maps.Copy(customInputs, flagValuesMap)
 
 	return workflow.CreateWorkflowFiles(deployType, customInputs, templateWriter)
+}
+
+func GenerateWorkflowBytes(draftConfig *config.DraftConfig, deployType string) ([]byte, error) {
+	envArgs := draftConfig.BuilderVarMap()
+	var srcPath string
+
+	switch deployType {
+	case "helm":
+		srcPath = "workflow/helm/.github/workflows/azure-kubernetes-service-helm.yml"
+	case "manifests":
+		srcPath = "workflow/manifests/.github/workflows/azure-kubernetes-service.yml"
+	default:
+		return nil, errors.New("unsupported deploy type")
+	}
+
+	workflowBytes, err := osutil.ReplaceTemplateVariables(template.Workflows, srcPath, envArgs)
+	if err != nil {
+		return nil, fmt.Errorf("replace template variables: %w", err)
+	}
+
+	if err = osutil.CheckAllVariablesSubstituted(string(workflowBytes)); err != nil {
+		return nil, fmt.Errorf("check all variables substituted: %w", err)
+	}
+
+	return workflowBytes, nil
 }

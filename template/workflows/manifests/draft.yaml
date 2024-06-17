@@ -1,19 +1,41 @@
 variables:
-  - name: "AZURECONTAINERREGISTRY"
+  ACRRESOURCEGROUP:
+    description: "the ACR resource group"
+    validation: "azResourceGroup"
+  AZURECONTAINERREGISTRY:
     description: "the Azure container registry name"
-  - name: "CONTAINERNAME"
-    description: "the container image name"
-  - name: "RESOURCEGROUP"
-    description: "the Azure resource group of your AKS cluster"
-  - name: "CLUSTERNAME"
-    description: "the AKS cluster name"
-  - name: "BRANCHNAME"
+    validation: "azContainerRegistry"
+  BRANCHNAME:
     description: "the Github branch to automatically deploy from"
-  - name: "BUILDCONTEXTPATH"
+    validation: "ghBranch"
+  BUILDCONTEXTPATH:
     description: "the path to the Docker build context"
-variableDefaults:
-  - name: "DEPLOYMENTMANIFESTPATH"
-    value: "./manifests"
-    disablePrompt: true
-  - name: "BUILDCONTEXTPATH"
     value: "."
+  CLUSTERNAME:
+    description: "the AKS cluster name"
+    validation: "azClusterName"
+  CLUSTERRESOURCEGROUP:
+    description: "the AKS cluster resource group"
+    validation: "azResourceGroup"
+  CONTAINERNAME:
+    description: "the container image name"
+    validation: "containerName"
+  DEPLOYMENTMANIFESTPATH:
+    description: "the path to the Kubernetes deployment manifest"
+    disablePrompt: true
+    validation: "dir"
+    value: "./manifests"
+  DOCKERFILE:
+    description: "the path to the Dockerfile"
+    validation: "dir"
+  NAMESPACE:
+    description: "the Kubernetes namespace"
+    value: "default"
+  PRIVATECLUSTER:
+    description: "set to true if the AKS cluster is private"
+    type: "bool"
+    value: "false"
+  WORKFLOWNAME:
+    description: "the name of the workflow"
+    value: "Build and deploy an app to AKS"
+  
