@@ -224,7 +224,7 @@ func getCloudProvider() string {
 }
 
 func getAzSubscriptionId(subLabels []providers.SubLabel, currentSub providers.SubLabel) (string, error) {
-	subLabel, err := prompts.Select("Please choose the subscription ID you would like to use", subLabels, &prompts.SelectOpt[providers.SubLabel]{
+	subLabel, err := prompts.Select("Please select the subscription ID you would like to use", subLabels, &prompts.SelectOpt[providers.SubLabel]{
 		Field: func(subLabel providers.SubLabel) string {
 			return subLabel.Name + " (" + subLabel.ID + ")"
 		},

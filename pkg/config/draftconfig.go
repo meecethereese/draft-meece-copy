@@ -25,8 +25,8 @@ type BuilderVar struct {
 	ExampleValues    []string `yaml:"exampleValues"`
 	IsPromptDisabled bool     `yaml:"disablePrompt"`
 	ReferenceVar     string   `yaml:"referenceVar"`
+	Resource         string   `yaml:"resource"`
 	Type             string   `yaml:"type"`
-	ValidateType     string   `yaml:"validation"`
 	Value            string   `yaml:"value"`
 }
 

@@ -1,32 +1,32 @@
 variables:
   ACRRESOURCEGROUP:
     description: "the ACR resource group"
-    validation: "azResourceGroup"
+    resource: "azResourceGroup"
   AZURECONTAINERREGISTRY:
     description: "the Azure container registry name"
-    validation: "azContainerRegistry"
+    resource: "azContainerRegistry"
   BRANCHNAME:
     description: "the Github branch to automatically deploy from"
-    validation: "ghBranch"
+    resource: "ghBranch"
   BUILDCONTEXTPATH:
     description: "the path to the Docker build context"
     value: "."
   CLUSTERNAME:
     description: "the AKS cluster name"
-    validation: "azClusterName"
+    resource: "azClusterName"
   CLUSTERRESOURCEGROUP:
     description: "the AKS cluster resource group"
-    validation: "azResourceGroup"
+    resource: "azResourceGroup"
   CONTAINERNAME:
     description: "the container image name"
-    validation: "containerName"
+    resource: "containerName"
   DOCKERFILE:
     description: "the path to the Dockerfile"
-    validation: "dir"
+    resource: "dir"
   KUSTOMIZEPATH:
     description: "the path to the Kustomize directory"
     disablePrompt: true
-    validation: "dir"
+    resource: "dir"
     value: "./overlays/production"
   NAMESPACE:
     description: "the Kubernetes namespace"
