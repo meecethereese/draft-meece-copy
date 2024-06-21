@@ -5,6 +5,7 @@ variables:
     description: "the name of the workflow"
   BRANCHNAME:
     description: "the Github branch to automatically deploy from"
+    resource: "ghBranch"
   ACRRESOURCEGROUP:
     description: "the ACR resource group"
   AZURECONTAINERREGISTRY:
